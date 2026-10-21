@@ -12,8 +12,8 @@ class DisplayControllerTest {
         val dev = FakeDevice(); val store = FakeStore()
         val c = DisplayController(dev, store)
 
-        assertTrue(c.apply(StretchPreset.R4_3) is Outcome.Success)
-        assertEquals(Resolution(1080, 1440), dev.override)
+        assertTrue(c.apply(1.30) is Outcome.Success)
+        assertEquals(Resolution(1080, 3120), dev.override)
         assertTrue(store.stretched)
 
         assertTrue(c.restore() is Outcome.Success)
@@ -25,7 +25,7 @@ class DisplayControllerTest {
         val dev = FakeDevice(override = Resolution(1080, 2000)); val store = FakeStore()
         val c = DisplayController(dev, store)
 
-        c.apply(StretchPreset.R4_3)
+        c.apply(1.30)
         c.restore()
         assertEquals(Resolution(1080, 2000), dev.override)
     }
@@ -34,8 +34,8 @@ class DisplayControllerTest {
         val dev = FakeDevice(); val store = FakeStore()
         val c = DisplayController(dev, store)
 
-        c.apply(StretchPreset.R4_3)
-        c.apply(StretchPreset.R16_10)
+        c.apply(1.30)
+        c.apply(1.20)
         c.restore()
         assertNull(dev.override)
     }
@@ -44,13 +44,13 @@ class DisplayControllerTest {
         val dev = FakeDevice(rejectSet = true); val store = FakeStore()
         val c = DisplayController(dev, store)
 
-        assertTrue(c.apply(StretchPreset.R4_3) is Outcome.Failure)
+        assertTrue(c.apply(1.30) is Outcome.Failure)
         assertNull(dev.override)
         assertFalse(store.stretched)
     }
 
     @Test fun restaurarSinDatosGuardadosUsaReset() {
-        val dev = FakeDevice(override = Resolution(1080, 1440)); val store = FakeStore()
+        val dev = FakeDevice(override = Resolution(1080, 3120)); val store = FakeStore()
         val c = DisplayController(dev, store)
 
         assertTrue(c.restore() is Outcome.Success)

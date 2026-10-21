@@ -20,6 +20,9 @@ data class DisplayState(val physical: Resolution, val override: Resolution?) {
     val isOverridden: Boolean get() = override != null && override != physical
 }
 
+/** Texto "lado largo × lado corto" (como se ve con el teléfono en horizontal). */
+fun Resolution.landscapeText() = "${maxOf(width, height)} × ${minOf(width, height)}"
+
 data class ShellResult(val exitCode: Int, val output: String) {
     val ok: Boolean get() = exitCode == 0
 }

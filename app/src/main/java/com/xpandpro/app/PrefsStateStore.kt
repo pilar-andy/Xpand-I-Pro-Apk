@@ -2,7 +2,6 @@ package com.xpandpro.app
 
 import android.content.Context
 import com.xpandpro.app.display.StateStore
-import com.xpandpro.app.display.StretchPreset
 
 class PrefsStateStore(context: Context) : StateStore {
     private val prefs = context.getSharedPreferences("xpand_state", Context.MODE_PRIVATE)
@@ -16,7 +15,9 @@ class PrefsStateStore(context: Context) : StateStore {
         get() = prefs.getString("original_override", null)
         set(v) { prefs.edit().putString("original_override", v).commit() }
 
-    var preset: StretchPreset
-        get() = StretchPreset.fromName(prefs.getString("preset", null))
-        set(v) { prefs.edit().putString("preset", v.name).apply() }
+    /** Multiplicador elegido, en centésimas (120 = 1.20x). */
+    var multiplierPercent: Int
+        get() = prefs.getInt("multiplier_percent", Config.DEFAULT_PERCENT)
+            .coerceIn(Config.MIN_PERCENT, Config.MAX_PERCENT)
+        set(v) { prefs.edit().putInt("multiplier_percent", v).apply() }
 }

@@ -63,50 +63,49 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:letterSpacing="0.1"
-            android:text="@string/format_label"
+            android:text="@string/multiplier_label"
             android:textColor="@color/red"
             android:textSize="12sp"
             android:textStyle="bold" />
 
-        <RadioGroup
-            android:id="@+id/preset_group"
+        <TextView
+            android:id="@+id/multiplier_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/text"
+            android:textSize="40sp"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/multiplier_seek"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:progressTint="@color/red"
+            android:thumbTint="@color/red" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <RadioButton
-                android:id="@+id/rb_16_9"
-                android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:buttonTint="@color/red"
-                android:text="16:9"
-                android:textColor="@color/text" />
+                android:layout_weight="1"
+                android:text="1.01x"
+                android:textColor="@color/text_dim"
+                android:textSize="12sp" />
 
-            <RadioButton
-                android:id="@+id/rb_16_10"
-                android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:buttonTint="@color/red"
-                android:text="16:10"
-                android:textColor="@color/text" />
-
-            <RadioButton
-                android:id="@+id/rb_4_3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:buttonTint="@color/red"
-                android:text="4:3"
-                android:textColor="@color/text" />
-
-            <RadioButton
-                android:id="@+id/rb_5_4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:buttonTint="@color/red"
-                android:text="5:4"
-                android:textColor="@color/text" />
-        </RadioGroup>
+                android:layout_weight="1"
+                android:gravity="end"
+                android:text="1.30x"
+                android:textColor="@color/text_dim"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <Button
             android:id="@+id/game_button"
@@ -127,5 +126,13 @@
             android:text="@string/hint"
             android:textColor="@color/text_dim"
             android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/diag_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/text_dim"
+            android:textSize="11sp" />
     </LinearLayout>
 </ScrollView>

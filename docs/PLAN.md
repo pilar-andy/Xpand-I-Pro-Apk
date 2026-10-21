@@ -4,8 +4,9 @@ Objetivo: app para otras personas, en distintos teléfonos y versiones de Androi
 Prioridad absoluta: **activar y restaurar el estirado funciona siempre** antes que cualquier extra.
 
 ## Cómo funciona el estirado
-Se reduce la resolución lógica del lado largo (p. ej. 1080×2400 → 1080×1440, que es 4:3) con `wm size`.
-Android escala esa imagen al panel completo, así el juego se ve "estirado". Restaurar es `wm size reset`
+Desde la v1.1 se ensancha la resolución lógica del lado largo según un multiplicador (p. ej. 1080×2400 a 1.30x → 1080×3120) con `wm size`,
+igual que Cat Resolution Pro. (La v1.0 hacía lo contrario —reducir el lado largo hasta 4:3— y recortaba/comprimía la imagen.)
+Android escala esa imagen al panel completo. Restaurar es `wm size reset`
 (o volver al valor que hubiera antes). Shizuku da el permiso de shell necesario, sin root.
 
 ## Fase 1 — Núcleo confiable (esta entrega)

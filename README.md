@@ -4,11 +4,11 @@ App Android nativa para **estirar la pantalla en juegos** (beta con Blood Strike
 Usa [Shizuku](https://shizuku.rikka.app/) para cambiar la resolución con `wm size`, sin root.
 Interfaz negra y roja, con un botón grande: **ACTIVAR / RESTAURAR**.
 
-## Estado: Fase 1 (núcleo)
+## Estado: v1.1 (modo multiplicador)
 Prioridad: que activar y restaurar el estirado funcione de forma confiable en cualquier teléfono.
 
 - Un botón que activa el estirado y, cuando está activo, lo restaura.
-- Formatos: 16:9, 16:10, 4:3 (por defecto) y 5:4. La resolución se calcula a partir de la pantalla real de cada teléfono.
+- Multiplicador de 1.01x a 1.30x (por defecto 1.20x): mantiene el lado corto y ensancha el lado largo (p. ej. 2688×1216 a 1.30x → 3494×1216). Se calcula a partir de la pantalla real de cada teléfono.
 - Red de seguridad: tras activar, 15 s para confirmar; si no se confirma, se restaura sola.
 - Se guarda el estado original antes de tocar nada, y después de cada cambio se verifica leyendo `wm size`.
 - Guía de conexión con Shizuku dentro de la app (instalar, abrir, dar permiso).

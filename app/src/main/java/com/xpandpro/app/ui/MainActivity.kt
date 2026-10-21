@@ -5,14 +5,14 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.Button
-import android.widget.RadioButton
-import android.widget.RadioGroup
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import com.xpandpro.app.Config
@@ -21,9 +21,12 @@ import com.xpandpro.app.R
 import com.xpandpro.app.display.DisplayController
 import com.xpandpro.app.display.DisplayState
 import com.xpandpro.app.display.Outcome
-import com.xpandpro.app.display.StretchPreset
+import com.xpandpro.app.display.Plan
+import com.xpandpro.app.display.StretchPlanner
+import com.xpandpro.app.display.landscapeText
 import com.xpandpro.app.shizuku.ShizukuManager
 import com.xpandpro.app.shizuku.ShizukuManager.Status
+import java.util.Locale
 import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
@@ -35,7 +38,9 @@ class MainActivity : Activity() {
     private lateinit var statusText: TextView
     private lateinit var mainButton: Button
     private lateinit var infoText: TextView
-    private lateinit var presetGroup: RadioGroup
+    private lateinit var multiplierText: TextView
+    private lateinit var seek: SeekBar
+    private lateinit var diagText: TextView
     private lateinit var gameButton: Button
 
     private val io = Executors.newSingleThreadExecutor()
@@ -57,11 +62,23 @@ class MainActivity : Activity() {
         statusText = findViewById(R.id.status_text)
         mainButton = findViewById(R.id.main_button)
         infoText = findViewById(R.id.info_text)
-        presetGroup = findViewById(R.id.preset_group)
+        multiplierText = findViewById(R.id.multiplier_text)
+        seek = findViewById(R.id.multiplier_seek)
+        diagText = findViewById(R.id.diag_text)
         gameButton = findViewById(R.id.game_button)
 
-        presetGroup.check(radioIdFor(store.preset))
-        presetGroup.setOnCheckedChangeListener { _, id -> store.preset = presetForId(id) }
+        // Barra: 0..29 -> 1.01x..1.30x
+        seek.max = Config.MAX_PERCENT - Config.MIN_PERCENT
+        seek.progress = store.multiplierPercent - Config.MIN_PERCENT
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) store.multiplierPercent = progress + Config.MIN_PERCENT
+                render()
+            }
+            override fun onStartTrackingTouch(bar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(bar: SeekBar?) = Unit
+        })
+        diagText.text = getString(R.string.diag, Build.MODEL, Build.VERSION.RELEASE, Build.VERSION.SDK_INT)
 
         mainButton.setOnClickListener { onMainButton() }
         gameButton.setOnClickListener { openGame() }
@@ -130,14 +147,22 @@ class MainActivity : Activity() {
         mainButton.setBackgroundResource(if (stretched) R.drawable.bg_main_on else R.drawable.bg_main_off)
         mainButton.isEnabled = !busy && status != Status.CONNECTING
 
+        val percent = store.multiplierPercent
+        multiplierText.text = String.format(Locale.US, "%.2fx", percent / 100.0)
+
         val s = deviceState
         infoText.text = if (status == Status.READY && s != null) {
-            if (stretched) getString(R.string.info_stretched, s.physical.toString(), s.current.toString())
-            else getString(R.string.info_normal, s.physical.toString())
+            if (stretched) {
+                getString(R.string.info_stretched, s.physical.landscapeText(), s.current.landscapeText())
+            } else {
+                when (val plan = StretchPlanner.plan(s, percent / 100.0)) {
+                    is Plan.Ok -> getString(R.string.info_preview, s.physical.landscapeText(), plan.target.landscapeText())
+                    is Plan.Invalid -> getString(R.string.info_normal, s.physical.landscapeText())
+                }
+            }
         } else ""
 
-        val canChoose = !busy && !stretched
-        for (i in 0 until presetGroup.childCount) presetGroup.getChildAt(i).isEnabled = canChoose
+        seek.isEnabled = !busy && !stretched
         gameButton.visibility = if (gameInstalled()) View.VISIBLE else View.GONE
     }
 
@@ -161,10 +186,10 @@ class MainActivity : Activity() {
     }
 
     private fun runApply() {
-        val preset = store.preset
+        val multiplier = store.multiplierPercent / 100.0
         setBusy(true)
         io.execute {
-            val out = controller.apply(preset)
+            val out = controller.apply(multiplier)
             ui.post {
                 busy = false
                 when (out) {
@@ -230,20 +255,6 @@ class MainActivity : Activity() {
     }
 
     // ---------- utilidades ----------
-
-    private fun radioIdFor(p: StretchPreset) = when (p) {
-        StretchPreset.R16_9 -> R.id.rb_16_9
-        StretchPreset.R16_10 -> R.id.rb_16_10
-        StretchPreset.R4_3 -> R.id.rb_4_3
-        StretchPreset.R5_4 -> R.id.rb_5_4
-    }
-
-    private fun presetForId(id: Int) = when (id) {
-        R.id.rb_16_9 -> StretchPreset.R16_9
-        R.id.rb_16_10 -> StretchPreset.R16_10
-        R.id.rb_5_4 -> StretchPreset.R5_4
-        else -> StretchPreset.R4_3
-    }
 
     private fun packageInstalled(pkg: String) = try {
         packageManager.getPackageInfo(pkg, 0)
