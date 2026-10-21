@@ -23,8 +23,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
-
+      # El runner de GitHub ya trae el Android SDK (ANDROID_HOME); no hace falta instalarlo.
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.7
