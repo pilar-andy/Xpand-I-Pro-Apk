@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Xpand Pro</string>
+    <string name="subtitle">Pantalla estirada para juegos</string>
+
+    <string name="status_unavailable">Shizuku no está activo</string>
+    <string name="status_needs_permission">Falta dar permiso a Xpand Pro en Shizuku</string>
+    <string name="status_blocked">Permiso bloqueado: actívalo dentro de la app Shizuku</string>
+    <string name="status_connecting">Conectando con Shizuku…</string>
+    <string name="status_ready">Shizuku conectado</string>
+
+    <string name="btn_activate">ACTIVAR</string>
+    <string name="btn_restore">RESTAURAR</string>
+    <string name="btn_grant">DAR PERMISO</string>
+    <string name="btn_connecting">CONECTANDO…</string>
+    <string name="btn_open_shizuku">ABRIR SHIZUKU</string>
+    <string name="btn_install_shizuku">INSTALAR SHIZUKU</string>
+    <string name="btn_game">ABRIR BLOOD STRIKE</string>
+
+    <string name="format_label">FORMATO</string>
+    <string name="info_normal">Pantalla normal · %1$s</string>
+    <string name="info_stretched">Estirada · %2$s (original %1$s)</string>
+
+    <string name="confirm_title">¿Se ve bien la pantalla?</string>
+    <string name="confirm_message">Si no confirmas, se restaura sola en %1$d s.</string>
+    <string name="confirm_keep">MANTENER</string>
+    <string name="confirm_restore">RESTAURAR</string>
+
+    <string name="game_not_installed">Blood Strike no está instalado</string>
+    <string name="hint">Para volver a la normalidad, abre Xpand Pro y pulsa RESTAURAR.</string>
+</resources>
