@@ -13,7 +13,7 @@ class DisplayControllerTest {
         val c = DisplayController(dev, store)
 
         assertTrue(c.apply(1.30) is Outcome.Success)
-        assertEquals(Resolution(1080, 3120), dev.override)
+        assertEquals(Resolution(1080, 1846), dev.override)
         assertTrue(store.stretched)
 
         assertTrue(c.restore() is Outcome.Success)
@@ -50,7 +50,7 @@ class DisplayControllerTest {
     }
 
     @Test fun restaurarSinDatosGuardadosUsaReset() {
-        val dev = FakeDevice(override = Resolution(1080, 3120)); val store = FakeStore()
+        val dev = FakeDevice(override = Resolution(1080, 1846)); val store = FakeStore()
         val c = DisplayController(dev, store)
 
         assertTrue(c.restore() is Outcome.Success)
@@ -61,5 +61,16 @@ class DisplayControllerTest {
     @Test fun siTodoFallaRestaurarDevuelveError() {
         val dev = FakeDevice(failAllCommands = true); val store = FakeStore()
         assertTrue(DisplayController(dev, store).restore() is Outcome.Failure)
+    }
+
+    @Test fun pruebaDeCompatibilidadAplica4por3YSeRestaura() {
+        val dev = FakeDevice(); val store = FakeStore()
+        val c = DisplayController(dev, store)
+
+        assertTrue(c.applyPlan { StretchPlanner.planAspect(it, 4, 3) } is Outcome.Success)
+        assertEquals(Resolution(1080, 1440), dev.override)
+        assertTrue(c.restore() is Outcome.Success)
+        assertNull(dev.override)
+        assertFalse(store.stretched)
     }
 }

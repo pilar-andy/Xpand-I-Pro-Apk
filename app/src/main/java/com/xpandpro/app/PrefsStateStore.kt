@@ -3,6 +3,9 @@ package com.xpandpro.app
 import android.content.Context
 import com.xpandpro.app.display.StateStore
 
+/** Resultado de la prueba de compatibilidad (la hace cada usuario en su teléfono). */
+enum class StretchSupport { UNKNOWN, YES, NO }
+
 class PrefsStateStore(context: Context) : StateStore {
     private val prefs = context.getSharedPreferences("xpand_state", Context.MODE_PRIVATE)
 
@@ -14,6 +17,12 @@ class PrefsStateStore(context: Context) : StateStore {
     override var originalOverride: String?
         get() = prefs.getString("original_override", null)
         set(v) { prefs.edit().putString("original_override", v).commit() }
+
+    /** ¿Este teléfono estira la imagen (YES) o solo deja barras negras (NO)? */
+    var stretchSupport: StretchSupport
+        get() = runCatching { StretchSupport.valueOf(prefs.getString("stretch_support", null) ?: "") }
+            .getOrDefault(StretchSupport.UNKNOWN)
+        set(v) { prefs.edit().putString("stretch_support", v.name).apply() }
 
     /** Multiplicador elegido, en centésimas (120 = 1.20x). */
     var multiplierPercent: Int

@@ -7,57 +7,80 @@ import org.junit.Test
 class StretchPlannerTest {
     private fun state(w: Int, h: Int) = DisplayState(Resolution(w, h), null)
 
-    /** Números reales de Cat Resolution Pro: 2688×1216 a 1.30x → 3494×1216. */
-    @Test fun igualaACatResolutionPro() {
-        val p = StretchPlanner.plan(state(1216, 2688), 1.30) as Plan.Ok
-        assertEquals(Resolution(1216, 3494), p.target)
-    }
+    // ---- estirado por multiplicador (reduce el lado largo) ----
 
     @Test fun telefono20por9a1_30() {
         val p = StretchPlanner.plan(state(1080, 2400), 1.30) as Plan.Ok
-        assertEquals(Resolution(1080, 3120), p.target)
+        assertEquals(Resolution(1080, 1846), p.target)
     }
 
-    @Test fun telefono20por9a1_20() {
-        val p = StretchPlanner.plan(state(1080, 2400), 1.20) as Plan.Ok
-        assertEquals(Resolution(1080, 2880), p.target)
+    @Test fun telefono20por9a1_50() {
+        val p = StretchPlanner.plan(state(1080, 2400), 1.50) as Plan.Ok
+        assertEquals(Resolution(1080, 1600), p.target)
     }
 
-    @Test fun mantieneElLadoCortoYAgrandaElLargo() {
-        val p = StretchPlanner.plan(state(1080, 2400), 1.15) as Plan.Ok
+    @Test fun mantieneElLadoCortoYReduceElLargo() {
+        val p = StretchPlanner.plan(state(1080, 2340), 1.25) as Plan.Ok
         assertEquals(1080, p.target.width)
-        assertTrue(p.target.height > 2400)
+        assertTrue(p.target.height < 2340)
     }
 
     @Test fun tabletHorizontalMantieneOrientacion() {
         val p = StretchPlanner.plan(state(2560, 1600), 1.25) as Plan.Ok
-        assertEquals(Resolution(3200, 1600), p.target)
+        assertEquals(Resolution(2048, 1600), p.target)
     }
 
     @Test fun multiplicadorFueraDeRangoEsInvalido() {
         assertTrue(StretchPlanner.plan(state(1080, 2400), 1.00) is Plan.Invalid)
         assertTrue(StretchPlanner.plan(state(1080, 2400), 0.80) is Plan.Invalid)
-        assertTrue(StretchPlanner.plan(state(1080, 2400), 1.31) is Plan.Invalid)
+        assertTrue(StretchPlanner.plan(state(1080, 2400), 1.71) is Plan.Invalid)
         assertTrue(StretchPlanner.plan(state(1080, 2400), Double.NaN) is Plan.Invalid)
     }
 
-    @Test fun siempreParteDeLaResolucionFisica() {
-        val modified = DisplayState(Resolution(1080, 2400), Resolution(1080, 3120))
-        val p = StretchPlanner.plan(modified, 1.10) as Plan.Ok
-        assertEquals(Resolution(1080, 2640), p.target)
+    @Test fun noDejaElLadoLargoMasCortoQueElCorto() {
+        // 1080x1200 con 1.30x daría 922 de largo (< 1080): se rechaza.
+        assertTrue(StretchPlanner.plan(state(1080, 1200), 1.30) is Plan.Invalid)
     }
 
-    @Test fun medidasSiempreParesYMayoresQueLaFisica() {
-        for (percent in 101..130) {
+    @Test fun siempreParteDeLaResolucionFisica() {
+        val modified = DisplayState(Resolution(1080, 2400), Resolution(1080, 1600))
+        val p = StretchPlanner.plan(modified, 1.20) as Plan.Ok
+        assertEquals(Resolution(1080, 2000), p.target)
+    }
+
+    @Test fun medidasSiempreParesYMenoresQueLaFisica() {
+        for (percent in 105..170) {
             val p = StretchPlanner.plan(state(1079, 2401), percent / 100.0)
-            if (p is Plan.Ok) {
-                assertEquals(0, p.target.height % 2)
-                assertTrue(p.target.height > 2401)
-            }
+            assertTrue(p is Plan.Ok)
+            p as Plan.Ok
+            assertEquals(0, p.target.height % 2)
+            assertTrue(p.target.height < 2401)
+            assertTrue(p.target.height >= 1079)
         }
     }
 
+    // ---- proporción fija (prueba de compatibilidad) ----
+
+    @Test fun telefono20por9a4por3() {
+        val p = StretchPlanner.planAspect(state(1080, 2400), 4, 3) as Plan.Ok
+        assertEquals(Resolution(1080, 1440), p.target)
+    }
+
+    @Test fun telefono2340a4por3() {
+        val p = StretchPlanner.planAspect(state(1080, 2340), 4, 3) as Plan.Ok
+        assertEquals(Resolution(1080, 1440), p.target)
+    }
+
+    @Test fun tabletHorizontal4por3() {
+        val p = StretchPlanner.planAspect(state(2560, 1600), 4, 3) as Plan.Ok
+        assertEquals(Resolution(2132, 1600), p.target)
+    }
+
+    @Test fun pantallaYaMasCuadradaQueElFormato() {
+        assertTrue(StretchPlanner.planAspect(state(1080, 1440), 16, 9) is Plan.Invalid)
+    }
+
     @Test fun textoHorizontal() {
-        assertEquals("2688 × 1216", Resolution(1216, 2688).landscapeText())
+        assertEquals("2400 × 1080", Resolution(1080, 2400).landscapeText())
     }
 }

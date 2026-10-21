@@ -23,6 +23,7 @@ import com.xpandpro.app.display.DisplayState
 import com.xpandpro.app.display.Outcome
 import com.xpandpro.app.display.Plan
 import com.xpandpro.app.display.StretchPlanner
+import com.xpandpro.app.StretchSupport
 import com.xpandpro.app.display.landscapeText
 import com.xpandpro.app.shizuku.ShizukuManager
 import com.xpandpro.app.shizuku.ShizukuManager.Status
@@ -30,6 +31,10 @@ import java.util.Locale
 import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
+
+    private companion object {
+        const val REQ_TEST = 1
+    }
 
     private lateinit var store: PrefsStateStore
     private lateinit var shizuku: ShizukuManager
@@ -42,6 +47,8 @@ class MainActivity : Activity() {
     private lateinit var seek: SeekBar
     private lateinit var diagText: TextView
     private lateinit var gameButton: Button
+    private lateinit var testButton: Button
+    private lateinit var supportText: TextView
 
     private val io = Executors.newSingleThreadExecutor()
     private val ui = Handler(Looper.getMainLooper())
@@ -66,6 +73,8 @@ class MainActivity : Activity() {
         seek = findViewById(R.id.multiplier_seek)
         diagText = findViewById(R.id.diag_text)
         gameButton = findViewById(R.id.game_button)
+        testButton = findViewById(R.id.test_button)
+        supportText = findViewById(R.id.support_text)
 
         // Barra: 0..29 -> 1.01x..1.30x
         seek.max = Config.MAX_PERCENT - Config.MIN_PERCENT
@@ -82,6 +91,7 @@ class MainActivity : Activity() {
 
         mainButton.setOnClickListener { onMainButton() }
         gameButton.setOnClickListener { openGame() }
+        testButton.setOnClickListener { runTest() }
 
         shizuku.register()
     }
@@ -163,6 +173,14 @@ class MainActivity : Activity() {
         } else ""
 
         seek.isEnabled = !busy && !stretched
+        testButton.isEnabled = !busy && status == Status.READY && !stretched
+        supportText.setText(
+            when (store.stretchSupport) {
+                StretchSupport.UNKNOWN -> R.string.support_unknown
+                StretchSupport.YES -> R.string.support_yes
+                StretchSupport.NO -> R.string.support_no
+            }
+        )
         gameButton.visibility = if (gameInstalled()) View.VISIBLE else View.GONE
     }
 
@@ -186,6 +204,10 @@ class MainActivity : Activity() {
     }
 
     private fun runApply() {
+        if (store.stretchSupport == StretchSupport.NO) {
+            toast(getString(R.string.no_stretch))
+            return
+        }
         val multiplier = store.multiplierPercent / 100.0
         setBusy(true)
         io.execute {
@@ -205,6 +227,48 @@ class MainActivity : Activity() {
                 }
             }
         }
+    }
+
+    /** Prueba de compatibilidad: aplica 4:3 un momento y muestra el círculo. */
+    private fun runTest() {
+        if (busy || shizuku.status() != Status.READY || isStretched()) return
+        setBusy(true)
+        io.execute {
+            val out = controller.applyPlan { StretchPlanner.planAspect(it, 4, 3) }
+            ui.post {
+                busy = false
+                when (out) {
+                    is Outcome.Success -> {
+                        deviceState = out.state
+                        render()
+                        startActivityForResult(Intent(this, StretchTestActivity::class.java), REQ_TEST)
+                    }
+                    is Outcome.Failure -> {
+                        toast(out.message)
+                        refresh()
+                    }
+                }
+            }
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQ_TEST) return
+        when (resultCode) {
+            StretchTestActivity.RESULT_ROUND_BARS -> {
+                store.stretchSupport = StretchSupport.NO
+                toast(getString(R.string.test_saved_no))
+            }
+            StretchTestActivity.RESULT_OVAL_FILL -> {
+                store.stretchSupport = StretchSupport.YES
+                toast(getString(R.string.test_saved_yes))
+            }
+            else -> Unit
+        }
+        // Pase lo que pase, la pantalla vuelve a la normalidad.
+        runRestore()
     }
 
     private fun runRestore() {

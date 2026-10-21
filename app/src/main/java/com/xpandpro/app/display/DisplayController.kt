@@ -18,11 +18,13 @@ class DisplayController(
         return if (r.ok) WmParser.parseSize(r.output) else null
     }
 
-    fun apply(multiplier: Double): Outcome {
+    fun apply(multiplier: Double): Outcome = applyPlan { StretchPlanner.plan(it, multiplier) }
+
+    fun applyPlan(planner: (DisplayState) -> Plan): Outcome {
         val before = readState()
             ?: return Outcome.Failure("No se pudo leer la pantalla. ¿Shizuku sigue activo?")
 
-        val target = when (val plan = StretchPlanner.plan(before, multiplier)) {
+        val target = when (val plan = planner(before)) {
             is Plan.Ok -> plan.target
             is Plan.Invalid -> return Outcome.Failure(plan.reason)
         }
