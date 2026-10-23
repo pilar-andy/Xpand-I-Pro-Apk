@@ -23,6 +23,7 @@ import com.xpandpro.app.display.DisplayState
 import com.xpandpro.app.display.Outcome
 import com.xpandpro.app.display.Plan
 import com.xpandpro.app.display.StretchPlanner
+import com.xpandpro.app.display.Tweak
 import com.xpandpro.app.StretchSupport
 import com.xpandpro.app.display.landscapeText
 import com.xpandpro.app.shizuku.ShizukuManager
@@ -34,7 +35,18 @@ class MainActivity : Activity() {
 
     private companion object {
         const val REQ_TEST = 1
+
+        /** Variantes que prueba la compatibilidad, de la más simple a la más completa. */
+        val VARIANTS: List<Set<Tweak>> = listOf(
+            emptySet(),
+            setOf(Tweak.DENSITY),
+            setOf(Tweak.SCALING_OFF),
+            setOf(Tweak.DENSITY, Tweak.SCALING_OFF),
+        )
     }
+
+    private val testQueue = ArrayDeque<Set<Tweak>>()
+    private var currentTweaks: Set<Tweak> = emptySet()
 
     private lateinit var store: PrefsStateStore
     private lateinit var shizuku: ShizukuManager
@@ -129,7 +141,8 @@ class MainActivity : Activity() {
         render()
     }
 
-    private fun isStretched() = deviceState?.isOverridden == true
+    private fun isStretched() =
+        deviceState?.isOverridden == true || store.scalingChanged || store.densityChanged
 
     private fun render() {
         val status = shizuku.status()
@@ -211,7 +224,7 @@ class MainActivity : Activity() {
         val multiplier = store.multiplierPercent / 100.0
         setBusy(true)
         io.execute {
-            val out = controller.apply(multiplier)
+            val out = controller.apply(multiplier, store.stretchTweaks)
             ui.post {
                 busy = false
                 when (out) {
@@ -229,27 +242,60 @@ class MainActivity : Activity() {
         }
     }
 
-    /** Prueba de compatibilidad: aplica 4:3 un momento y muestra el círculo. */
+    /**
+     * Prueba de compatibilidad: prueba hasta 4 variantes (solo tamaño, + densidad,
+     * + escalado desactivado, + ambas). En cada una muestra el círculo; la primera
+     * que estire se guarda. Entre variantes la pantalla siempre se restaura.
+     */
     private fun runTest() {
         if (busy || shizuku.status() != Status.READY || isStretched()) return
+        testQueue.clear()
+        testQueue.addAll(VARIANTS)
+        startNextVariant()
+    }
+
+    private fun startNextVariant() {
+        if (testQueue.isEmpty()) return
+        val tweaks = testQueue.removeFirst()
+        currentTweaks = tweaks
+        val step = VARIANTS.size - testQueue.size
         setBusy(true)
         io.execute {
-            val out = controller.applyPlan { StretchPlanner.planAspect(it, 4, 3) }
+            val out = controller.applyPlan(tweaks) { StretchPlanner.planAspect(it, 4, 3) }
             ui.post {
                 busy = false
                 when (out) {
                     is Outcome.Success -> {
                         deviceState = out.state
                         render()
-                        startActivityForResult(Intent(this, StretchTestActivity::class.java), REQ_TEST)
+                        val intent = Intent(this, StretchTestActivity::class.java)
+                            .putExtra(StretchTestActivity.EXTRA_STEP, step)
+                            .putExtra(StretchTestActivity.EXTRA_TOTAL, VARIANTS.size)
+                        startActivityForResult(intent, REQ_TEST)
                     }
                     is Outcome.Failure -> {
                         toast(out.message)
-                        refresh()
+                        if (tweaks.isEmpty()) {
+                            // Falló la prueba base (pantalla no válida o tamaño rechazado): se detiene.
+                            testQueue.clear()
+                            refresh()
+                        } else if (testQueue.isNotEmpty()) {
+                            // El teléfono no aceptó este ajuste extra: se pasa a la siguiente variante.
+                            startNextVariant()
+                        } else {
+                            finishTestAsNo()
+                        }
                     }
                 }
             }
         }
+    }
+
+    private fun finishTestAsNo() {
+        store.stretchSupport = StretchSupport.NO
+        store.stretchTweaks = emptySet()
+        toast(getString(R.string.test_saved_no))
+        refresh()
     }
 
     @Deprecated("Deprecated in Java")
@@ -257,21 +303,33 @@ class MainActivity : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != REQ_TEST) return
         when (resultCode) {
-            StretchTestActivity.RESULT_ROUND_BARS -> {
-                store.stretchSupport = StretchSupport.NO
-                toast(getString(R.string.test_saved_no))
-            }
             StretchTestActivity.RESULT_OVAL_FILL -> {
                 store.stretchSupport = StretchSupport.YES
+                store.stretchTweaks = currentTweaks
+                testQueue.clear()
                 toast(getString(R.string.test_saved_yes))
+                runRestore()
             }
-            else -> Unit
+            StretchTestActivity.RESULT_ROUND_BARS -> {
+                if (testQueue.isNotEmpty()) {
+                    runRestore { startNextVariant() }
+                } else {
+                    store.stretchSupport = StretchSupport.NO
+                    store.stretchTweaks = emptySet()
+                    toast(getString(R.string.test_saved_no))
+                    runRestore()
+                }
+            }
+            else -> {
+                // Sin respuesta o "no estoy seguro": se detiene y se restaura, sin guardar nada.
+                testQueue.clear()
+                toast(getString(R.string.test_stopped))
+                runRestore()
+            }
         }
-        // Pase lo que pase, la pantalla vuelve a la normalidad.
-        runRestore()
     }
 
-    private fun runRestore() {
+    private fun runRestore(onDone: (() -> Unit)? = null) {
         cancelConfirm()
         setBusy(true)
         io.execute {
@@ -279,10 +337,17 @@ class MainActivity : Activity() {
             ui.post {
                 busy = false
                 when (out) {
-                    is Outcome.Success -> deviceState = out.state
-                    is Outcome.Failure -> toast(out.message)
+                    is Outcome.Success -> {
+                        deviceState = out.state
+                        refresh()
+                        onDone?.invoke()
+                    }
+                    is Outcome.Failure -> {
+                        toast(out.message)
+                        testQueue.clear()
+                        refresh()
+                    }
                 }
-                refresh()
             }
         }
     }

@@ -31,13 +31,19 @@ class StretchTestActivity : Activity() {
         const val RESULT_ROUND_BARS = 1
         const val RESULT_OVAL_FILL = 2
         const val RESULT_UNSURE = 3
+        const val EXTRA_STEP = "step"
+        const val EXTRA_TOTAL = "total"
         private const val SECONDS = 25
     }
 
     private var countdown: CountDownTimer? = null
+    private var step = 1
+    private var total = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        step = intent.getIntExtra(EXTRA_STEP, 1)
+        total = intent.getIntExtra(EXTRA_TOTAL, 1)
         window.addFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN or
                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
@@ -63,7 +69,7 @@ class StretchTestActivity : Activity() {
             setPadding((16 * dp).toInt(), (8 * dp).toInt(), (16 * dp).toInt(), (8 * dp).toInt())
         }
         val question = TextView(this).apply {
-            text = getString(R.string.test_question, SECONDS)
+            text = getString(R.string.test_question, step, total, SECONDS)
             setTextColor(getColor(R.color.text))
             textSize = 14f
             gravity = Gravity.CENTER
@@ -96,7 +102,7 @@ class StretchTestActivity : Activity() {
         // Red de seguridad: si no se responde, se cierra y la pantalla se restaura.
         countdown = object : CountDownTimer(SECONDS * 1000L, 1000L) {
             override fun onTick(msLeft: Long) {
-                question.text = getString(R.string.test_question, (msLeft / 1000L + 1).toInt())
+                question.text = getString(R.string.test_question, step, total, (msLeft / 1000L + 1).toInt())
             }
 
             override fun onFinish() {

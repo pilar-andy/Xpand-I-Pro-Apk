@@ -23,4 +23,20 @@ class WmParserTest {
     @Test fun salidaInvalida() {
         assertNull(WmParser.parseSize("cmd: not found"))
     }
+
+    @Test fun densidadSinOverride() {
+        val d = WmParser.parseDensity("Physical density: 420\n")!!
+        assertEquals(420, d.current)
+        assertFalse(d.isOverridden)
+    }
+
+    @Test fun densidadConOverride() {
+        val d = WmParser.parseDensity("Physical density: 420\nOverride density: 323\n")!!
+        assertEquals(323, d.current)
+        assertTrue(d.isOverridden)
+    }
+
+    @Test fun densidadInvalida() {
+        assertNull(WmParser.parseDensity("nope"))
+    }
 }

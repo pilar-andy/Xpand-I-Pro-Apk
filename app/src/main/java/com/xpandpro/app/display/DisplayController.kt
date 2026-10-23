@@ -8,6 +8,8 @@ package com.xpandpro.app.display
  *  2. Después de cada cambio se vuelve a leer `wm size` para comprobar que se aplicó.
  *  3. Si algo falla al activar, se restaura de inmediato.
  *  4. Restaurar siempre tiene salida: si no hay datos guardados o falla, `wm size reset`.
+ *  5. Los ajustes extra (densidad, escalado) se anotan ANTES de aplicarse y se
+ *     deshacen siempre al restaurar (`wm density`, `wm scaling auto`).
  */
 class DisplayController(
     private val shell: ShellRunner,
@@ -18,9 +20,15 @@ class DisplayController(
         return if (r.ok) WmParser.parseSize(r.output) else null
     }
 
-    fun apply(multiplier: Double): Outcome = applyPlan { StretchPlanner.plan(it, multiplier) }
+    fun readDensity(): DensityState? {
+        val r = shell.run("wm density")
+        return if (r.ok) WmParser.parseDensity(r.output) else null
+    }
 
-    fun applyPlan(planner: (DisplayState) -> Plan): Outcome {
+    fun apply(multiplier: Double, tweaks: Set<Tweak> = emptySet()): Outcome =
+        applyPlan(tweaks) { StretchPlanner.plan(it, multiplier) }
+
+    fun applyPlan(tweaks: Set<Tweak> = emptySet(), planner: (DisplayState) -> Plan): Outcome {
         val before = readState()
             ?: return Outcome.Failure("No se pudo leer la pantalla. ¿Shizuku sigue activo?")
 
@@ -41,10 +49,41 @@ class DisplayController(
             restore()
             return Outcome.Failure("El teléfono no aceptó la resolución $target. Se restauró la pantalla.")
         }
-        return Outcome.Success(after)
+
+        if (tweaks.isNotEmpty()) {
+            val problem = applyTweaks(before, target, tweaks)
+            if (problem != null) {
+                restore()
+                return Outcome.Failure("$problem Se restauró la pantalla.")
+            }
+        }
+        return Outcome.Success(readState() ?: after)
+    }
+
+    private fun applyTweaks(before: DisplayState, target: Resolution, tweaks: Set<Tweak>): String? {
+        if (Tweak.DENSITY in tweaks) {
+            val d = readDensity() ?: return "No se pudo leer la densidad."
+            if (!store.densityChanged) store.originalDensity = if (d.isOverridden) d.current.toString() else ""
+            store.densityChanged = true
+
+            val longBefore = maxOf(before.physical.width, before.physical.height)
+            val longAfter = maxOf(target.width, target.height)
+            val newDensity = Math.round(d.physical.toDouble() * longAfter / longBefore).toInt().coerceIn(72, 1000)
+
+            val r = shell.run("wm density $newDensity")
+            val now = if (r.ok) readDensity() else null
+            if (now == null || now.current != newDensity) return "El teléfono no aceptó la densidad $newDensity."
+        }
+        if (Tweak.SCALING_OFF in tweaks) {
+            store.scalingChanged = true
+            if (!shell.run("wm scaling off").ok) return "El teléfono no aceptó desactivar el escalado."
+        }
+        return null
     }
 
     fun restore(): Outcome {
+        val extrasOk = restoreExtras()
+
         val original = Resolution.parse(store.originalOverride)
         val firstTry = if (store.stretched && original != null) "wm size $original" else "wm size reset"
 
@@ -59,7 +98,36 @@ class DisplayController(
         }
         store.stretched = false
         store.originalOverride = null
+        if (!extrasOk) {
+            return Outcome.Failure("Se restauró el tamaño, pero no la densidad o el escalado. Pulsa RESTAURAR otra vez.")
+        }
         return Outcome.Success(state)
+    }
+
+    /** Devuelve true si no había nada que deshacer o todo se deshizo bien. */
+    private fun restoreExtras(): Boolean {
+        var ok = true
+        if (store.scalingChanged) {
+            if (shell.run("wm scaling auto").ok) store.scalingChanged = false else ok = false
+        }
+        if (store.densityChanged) {
+            val original = store.originalDensity?.toIntOrNull()
+            val first = if (original != null) "wm density $original" else "wm density reset"
+            var done = shell.run(first).ok && densityRestored(original)
+            if (!done) done = shell.run("wm density reset").ok && densityRestored(null)
+            if (done) {
+                store.densityChanged = false
+                store.originalDensity = null
+            } else {
+                ok = false
+            }
+        }
+        return ok
+    }
+
+    private fun densityRestored(original: Int?): Boolean {
+        val d = readDensity() ?: return false
+        return if (original != null) d.current == original else !d.isOverridden
     }
 
     private fun tryCommand(cmd: String): DisplayState? {

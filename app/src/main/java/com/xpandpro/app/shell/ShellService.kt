@@ -4,7 +4,8 @@ import kotlin.system.exitProcess
 
 /**
  * Corre dentro del proceso "shell" que arranca Shizuku (privilegios de adb).
- * Solo acepta comandos `wm size ...`; cualquier otra cosa se rechaza.
+ * Solo acepta comandos `wm size`, `wm density` y `wm scaling` con argumentos
+ * exactos (coincidencia completa, sin `;` ni nada extra); lo demás se rechaza.
  */
 class ShellService : IShellService.Stub() {
 
@@ -14,7 +15,7 @@ class ShellService : IShellService.Stub() {
 
     override fun exec(command: String?): String {
         val cmd = command?.trim().orEmpty()
-        if (!ALLOWED.matches(cmd)) return "-2\nComando no permitido"
+        if (!CommandWhitelist.isAllowed(cmd)) return "-2\nComando no permitido"
         return try {
             val process = ProcessBuilder("sh", "-c", cmd)
                 .redirectErrorStream(true)
@@ -25,9 +26,5 @@ class ShellService : IShellService.Stub() {
         } catch (t: Throwable) {
             "-1\n${t.message}"
         }
-    }
-
-    private companion object {
-        val ALLOWED = Regex("""wm size( reset| \d{2,5}x\d{2,5})?""")
     }
 }

@@ -12,6 +12,12 @@ Si el teléfono rellena el panel con esa imagen, el juego se ve "estirado" (pers
 (`LogicalDisplay`), y cada fabricante lo cambia a su manera. Por eso la app incluye una prueba de compatibilidad
 (círculo + borde) que cada usuario hace en su teléfono; no hay lógica por modelo.
 
+### Experimento v1.3: densidad y `wm scaling off`
+Según el código de Android, `wm scaling off` **desactiva** el escalado (la imagen se muestra a su tamaño lógico, sin ajustarla al panel),
+así que en teoría no estira; se incluye solo como variante de la prueba para descartarlo con datos. `wm density` ajusta el tamaño de la
+interfaz. La restauración deshace siempre tamaño, densidad y escalado (`wm scaling auto`). La lista blanca de comandos es estricta
+(coincidencia completa) y tiene pruebas contra inyección.
+
 ## Fase 1 — Núcleo confiable (esta entrega)
 - [x] Proyecto Android nativo (Kotlin, vistas XML, sin dependencias pesadas)
 - [x] Conexión con Shizuku (UserService) y guía de estados

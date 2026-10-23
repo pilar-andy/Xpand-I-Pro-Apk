@@ -20,6 +20,15 @@ data class DisplayState(val physical: Resolution, val override: Resolution?) {
     val isOverridden: Boolean get() = override != null && override != physical
 }
 
+/** Densidad leída de `wm density`. */
+data class DensityState(val physical: Int, val override: Int?) {
+    val current: Int get() = override ?: physical
+    val isOverridden: Boolean get() = override != null && override != physical
+}
+
+/** Ajustes extra que se prueban para ver si el teléfono estira la imagen. */
+enum class Tweak { DENSITY, SCALING_OFF }
+
 /** Texto "lado largo × lado corto" (como se ve con el teléfono en horizontal). */
 fun Resolution.landscapeText() = "${maxOf(width, height)} × ${minOf(width, height)}"
 
@@ -37,6 +46,15 @@ interface StateStore {
 
     /** Override que existía ANTES de estirar ("" = ninguno). null = sin dato. */
     var originalOverride: String?
+
+    /** Densidad que había antes de tocarla ("" = ninguna). */
+    var originalDensity: String?
+
+    /** True si `wm density` fue modificado por la app y falta devolverlo. */
+    var densityChanged: Boolean
+
+    /** True si `wm scaling off` fue aplicado por la app y falta volver a `auto`. */
+    var scalingChanged: Boolean
 }
 
 sealed class Outcome {
