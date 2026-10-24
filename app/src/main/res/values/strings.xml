@@ -18,30 +18,9 @@
     <string name="btn_game">ABRIR BLOOD STRIKE</string>
 
     <string name="multiplier_label">ESTIRADO</string>
-    <string name="btn_test">PROBAR MI PANTALLA</string>
-    <string name="support_unknown">Compatibilidad: sin probar. Toca PROBAR MI PANTALLA.</string>
-    <string name="support_yes">Tu pantalla SÍ estira ✓</string>
-    <string name="support_no">Ninguna de las pruebas estiró tu pantalla: solo deja barras negras ✕. Puedes repetirla.</string>
-    <string name="no_stretch">Esta pantalla no estira (la prueba mostró solo barras negras). Repite la prueba si crees que fue un error.</string>
-    <string name="test_question">Prueba %1$d de %2$d · ¿Cómo se ve el círculo? (se cierra en %3$d s)</string>
-    <string name="test_round_bars">Redondo, con barras negras</string>
-    <string name="test_oval_fill">Ovalado, llena la pantalla</string>
-    <string name="test_unsure">No estoy seguro</string>
-    <string name="test_saved_yes">Resultado guardado: tu pantalla sí estira.</string>
-    <string name="test_saved_no">Resultado guardado: tu pantalla no estira.</string>
-    <string name="btn_projection">PROBAR PROYECCIÓN (EXPERIMENTAL)</string>
-    <string name="projection_waiting">Esperando la orientación horizontal…</string>
-    <string name="projection_no_service">Shizuku no está conectado.</string>
-    <string name="projection_applying">Aplicando proyección %1$.2fx…</string>
-    <string name="projection_ok">Proyección aplicada. Toca la pantalla para ver dónde se registra el toque.</string>
-    <string name="projection_error">No se aplicó: %1$s</string>
-    <string name="projection_saved_yes">Resultado guardado: la proyección directa estira tu pantalla.</string>
-    <string name="projection_saved_no">Resultado guardado: la proyección directa no estira tu pantalla.</string>
-    <string name="test_stopped">Prueba detenida. La pantalla se restauró.</string>
-    <string name="info_preview">Nativa %1$s → Proyección %2$s</string>
+    <string name="info_preview">Personajes %1$.2fx más anchos · se recortan un poco los bordes</string>
     <string name="diag">%1$s · Android %2$s (API %3$d)</string>
-    <string name="info_normal">Pantalla normal · %1$s</string>
-    <string name="info_stretched">Nativa %1$s → Proyección %2$s (activo)</string>
+    <string name="info_stretched">Estirado %1$.2fx activo</string>
 
     <string name="confirm_title">¿Se ve bien la pantalla?</string>
     <string name="confirm_message">Si no confirmas, se restaura sola en %1$d s.</string>

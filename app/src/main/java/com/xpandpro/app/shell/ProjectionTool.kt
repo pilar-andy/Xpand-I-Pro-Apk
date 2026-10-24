@@ -8,7 +8,7 @@ import com.xpandpro.app.display.ProjectionPlanner
 import java.lang.reflect.InvocationTargetException
 
 /**
- * EXPERIMENTAL. Corre dentro del proceso privilegiado de Shizuku. Usa APIs ocultas de Android
+ * Corre dentro del proceso privilegiado de Shizuku. Usa APIs ocultas de Android
  * (SurfaceControl) por reflexión, igual que hace scrcpy, para cambiar cómo el compositor
  * proyecta la imagen sobre el panel. No toca `wm size`.
  *
@@ -84,14 +84,54 @@ object ProjectionTool {
             ?: throw IllegalStateException("Sin información de pantalla")
     }
 
+    /**
+     * Token de la pantalla principal, según la versión de Android:
+     * 14+ -> DisplayControl (clase de services.jar, como hace scrcpy);
+     * 10-13 -> SurfaceControl.getPhysicalDisplayIds/Token; 9 o menos -> getBuiltInDisplay(0).
+     */
     private fun displayToken(): IBinder {
+        val errors = StringBuilder()
         val sc = Class.forName("android.view.SurfaceControl")
-        val token = try {
-            sc.getMethod("getInternalDisplayToken").invoke(null)
-        } catch (_: NoSuchMethodException) {
-            sc.getMethod("getBuiltInDisplay", Int::class.javaPrimitiveType).invoke(null, 0)
+        val attempts: List<Pair<String, () -> Any?>> = listOf(
+            "getInternalDisplayToken" to { sc.getMethod("getInternalDisplayToken").invoke(null) },
+            "SurfaceControl.physical" to {
+                val ids = sc.getMethod("getPhysicalDisplayIds").invoke(null) as LongArray
+                sc.getMethod("getPhysicalDisplayToken", Long::class.javaPrimitiveType).invoke(null, ids[0])
+            },
+            "DisplayControl" to {
+                val dc = displayControlClass()
+                val ids = dc.getMethod("getPhysicalDisplayIds").invoke(null) as LongArray
+                dc.getMethod("getPhysicalDisplayToken", Long::class.javaPrimitiveType).invoke(null, ids[0])
+            },
+            "getBuiltInDisplay" to { sc.getMethod("getBuiltInDisplay", Int::class.javaPrimitiveType).invoke(null, 0) },
+        )
+        for ((name, f) in attempts) {
+            try {
+                (f() as? IBinder)?.let { return it }
+            } catch (t: Throwable) {
+                errors.append(name).append(": ").append(unwrap(t).javaClass.simpleName).append("; ")
+            }
         }
-        return token as? IBinder ?: throw IllegalStateException("Sin token de pantalla")
+        throw IllegalStateException("Sin token de pantalla ($errors)")
+    }
+
+    /** Android 14+: DisplayControl vive en services.jar y necesita la librería android_servers. */
+    private fun displayControlClass(): Class<*> {
+        runCatching { return Class.forName("android.view.DisplayControl") }
+        val factory = Class.forName("com.android.internal.os.ClassLoaderFactory")
+        val create = factory.getDeclaredMethod(
+            "createClassLoader", String::class.java, String::class.java, String::class.java,
+            ClassLoader::class.java, Int::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, String::class.java
+        )
+        val loader = create.invoke(
+            null, "/system/framework/services.jar", null, null,
+            ClassLoader.getSystemClassLoader(), 0, true, null
+        ) as ClassLoader
+        val dc = loader.loadClass("com.android.server.display.DisplayControl")
+        val load = Runtime::class.java.getDeclaredMethod("loadLibrary0", Class::class.java, String::class.java)
+        load.isAccessible = true
+        load.invoke(Runtime.getRuntime(), dc, "android_servers")
+        return dc
     }
 
     private fun applyProjection(token: IBinder, orientation: Int, stack: Rect, display: Rect) {

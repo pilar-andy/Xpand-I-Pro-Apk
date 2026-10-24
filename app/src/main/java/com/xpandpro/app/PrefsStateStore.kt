@@ -47,7 +47,7 @@ class PrefsStateStore(context: Context) : StateStore {
             .getOrDefault(StretchSupport.UNKNOWN)
         set(v) { prefs.edit().putString("stretch_support", v.name).apply() }
 
-    /** Resultado de la prueba experimental de proyección directa. */
+    /** Resultado de la prueba de proyección directa. */
     var projectionSupport: StretchSupport
         get() = runCatching { StretchSupport.valueOf(prefs.getString("projection_support", null) ?: "") }
             .getOrDefault(StretchSupport.UNKNOWN)

@@ -61,7 +61,7 @@ class DisplayController(
     }
 
     /**
-     * EXPERIMENTAL: proyección directa. No cambia `wm size`; ensancha la imagen en el compositor.
+     * Proyección directa. No cambia `wm size`; ensancha la imagen en el compositor.
      * Solo se aplica si la pantalla está sin tamaño personalizado.
      */
     fun applyProjection(multiplier: Double): Outcome {

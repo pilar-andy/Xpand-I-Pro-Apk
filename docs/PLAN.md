@@ -50,14 +50,14 @@ interfaz. La restauración deshace siempre tamaño, densidad y escalado (`wm sca
 - Si se reinicia el teléfono estirado, el cambio persiste: abrir Xpand Pro y pulsar RESTAURAR
   (o Ajustes > Pantalla). Una opción de recuperación al arrancar queda para la Fase 2.
 
-## v1.4 — Proyección directa (experimental)
+## v1.5 — Proyección directa como modo principal
 
-Botón "PROBAR PROYECCIÓN (EXPERIMENTAL)": en vez de `wm size`, se usa la proyección del
-compositor (`SurfaceControl.Transaction.setDisplayProjection`) con Shizuku: se toma la franja
-central de la imagen (lado largo ÷ multiplicador) y se estira a todo el panel. Resultado
-esperado: personajes más anchos, sin barras, con recorte en los bordes. No se toca `wm size`.
+ACTIVAR usa la proyección del compositor (`SurfaceControl.Transaction.setDisplayProjection`) por
+Shizuku: toma la franja central de la imagen (lado largo ÷ multiplicador) y la estira a todo el
+panel, sin tocar `wm size`. Personajes más anchos, sin barras, con un recorte pequeño en los bordes.
+- La app abre en horizontal para que el estirado se aplique al eje correcto.
+- Token de pantalla compatible con Android 9 a 16 (en 14+ vía `DisplayControl`, como scrcpy).
 - Es solo en tiempo de ejecución: reiniciar el teléfono lo deshace; girar la pantalla puede reiniciarla.
-- Los toques pueden no coincidir con la imagen (la prueba muestra un marcador de toque).
-- Siempre se restaura (cuenta atrás de 25 s, botón de restaurar y al salir); la restauración
-  fuerza al sistema a reaplicar su proyección con un cambio mínimo de `wm size` + `wm size reset`.
-- Depende de la versión de Android; si falla, la app muestra el motivo y guarda el resultado.
+- Siempre se restaura (cuenta atrás de 15 s, botón RESTAURAR); la restauración fuerza al sistema a
+  reaplicar su proyección con un cambio mínimo de `wm size` + `wm size reset`.
+- Los toques pueden no coincidir exactamente con la imagen estirada.

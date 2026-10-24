@@ -16,7 +16,7 @@ class ShellService : IShellService.Stub() {
     override fun exec(command: String?): String {
         val cmd = command?.trim().orEmpty()
         if (!CommandWhitelist.isAllowed(cmd)) return "-2\nComando no permitido"
-        // Comandos propios (experimental): se resuelven aquí, sin pasar por `sh`.
+        // Comandos propios: se resuelven aquí, sin pasar por `sh`.
         if (cmd.startsWith("xpand-projection")) return ProjectionTool.handle(cmd)
         return try {
             val process = ProcessBuilder("sh", "-c", cmd)

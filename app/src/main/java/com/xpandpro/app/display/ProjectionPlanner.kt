@@ -15,7 +15,7 @@ sealed class ProjectionPlan {
 
 object ProjectionPlanner {
     /**
-     * Estirado "con recorte" (EXPERIMENTAL): se toma la franja central de la imagen
+     * Estirado "con recorte": se toma la franja central de la imagen
      * (lado largo / multiplicador) y se estira a todo el panel. Los personajes se ven
      * `multiplicador` veces más anchos y se pierden los bordes. No cambia `wm size`.
      *

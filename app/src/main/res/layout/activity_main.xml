@@ -107,36 +107,8 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/support_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center"
-            android:textColor="@color/text_dim"
-            android:textSize="12sp" />
 
-        <Button
-            android:id="@+id/test_button"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_secondary"
-            android:stateListAnimator="@null"
-            android:text="@string/btn_test"
-            android:textColor="@color/text"
-            android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/projection_button"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_secondary"
-            android:stateListAnimator="@null"
-            android:text="@string/btn_projection"
-            android:textColor="@color/text"
-            android:textStyle="bold" />
 
         <Button
             android:id="@+id/game_button"
