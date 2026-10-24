@@ -9,7 +9,7 @@ Prioridad: que activar y restaurar el estirado funcione de forma confiable en cu
 
 - Un botón que activa el estirado y, cuando está activo, lo restaura.
 - Estirado por multiplicador de 1.05x a 1.70x (por defecto 1.30x): mantiene el lado corto y reduce el lado largo (p. ej. 1080×2400 a 1.30x → 1080×1846). Se calcula a partir de la pantalla real de cada teléfono.
-- Prueba de compatibilidad (PROBAR MI PANTALLA): no todos los teléfonos estiran; algunos solo dejan barras negras. La prueba lo comprueba en cada teléfono con un círculo, sin lógica por modelo. Desde la v1.3 prueba hasta 4 variantes (solo tamaño, + densidad, + `wm scaling off`, + ambas) y guarda la primera que estire.
+- Modo de estirado: ACTIVAR usa la proyección directa del compositor (SurfaceControl, vía Shizuku), sin cambiar la resolución. Se restaura con RESTAURAR, tras 15 s sin confirmar, o al reiniciar el teléfono.
 - Red de seguridad: tras activar, 15 s para confirmar; si no se confirma, se restaura sola.
 - Se guarda el estado original antes de tocar nada, y después de cada cambio se verifica leyendo `wm size`.
 - Guía de conexión con Shizuku dentro de la app (instalar, abrir, dar permiso).
