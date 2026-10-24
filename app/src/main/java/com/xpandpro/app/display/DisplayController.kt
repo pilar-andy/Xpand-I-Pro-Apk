@@ -60,6 +60,28 @@ class DisplayController(
         return Outcome.Success(readState() ?: after)
     }
 
+    /**
+     * EXPERIMENTAL: proyección directa. No cambia `wm size`; ensancha la imagen en el compositor.
+     * Solo se aplica si la pantalla está sin tamaño personalizado.
+     */
+    fun applyProjection(multiplier: Double): Outcome {
+        val before = readState()
+            ?: return Outcome.Failure("No se pudo leer la pantalla. ¿Shizuku sigue activo?")
+        if (before.isOverridden) {
+            return Outcome.Failure("Hay un tamaño personalizado activo. Restaura la pantalla primero.")
+        }
+        val permille = Math.round(multiplier * 1000.0).toInt()
+        val p = before.physical
+
+        store.projectionChanged = true // se anota ANTES de aplicar
+        val r = shell.run("xpand-projection stretch ${p.width} ${p.height} $permille")
+        if (!r.ok) {
+            restore()
+            return Outcome.Failure("No se pudo aplicar la proyección (${r.output.trim()}). Se restauró la pantalla.")
+        }
+        return Outcome.Success(before)
+    }
+
     private fun applyTweaks(before: DisplayState, target: Resolution, tweaks: Set<Tweak>): String? {
         if (Tweak.DENSITY in tweaks) {
             val d = readDensity() ?: return "No se pudo leer la densidad."
@@ -107,6 +129,19 @@ class DisplayController(
     /** Devuelve true si no había nada que deshacer o todo se deshizo bien. */
     private fun restoreExtras(): Boolean {
         var ok = true
+        if (store.projectionChanged) {
+            // Rebote: cambiar `wm size` un instante obliga al sistema a volver a aplicar SU proyección,
+            // sin depender de nuestras medidas. Luego `wm size reset` lo deja como estaba.
+            val p = readState()?.physical
+            if (p != null) {
+                val bump = if (p.height >= p.width) "${p.width}x${maxOf(p.height - 2, 2)}" else "${maxOf(p.width - 2, 2)}x${p.height}"
+                val a = shell.run("wm size $bump")
+                val b = shell.run("wm size reset")
+                if (a.ok && b.ok) store.projectionChanged = false else ok = false
+            } else {
+                ok = false
+            }
+        }
         if (store.scalingChanged) {
             if (shell.run("wm scaling auto").ok) store.scalingChanged = false else ok = false
         }

@@ -10,6 +10,7 @@ class CommandWhitelistTest {
             "wm size", "wm size reset", "wm size 1080x1846",
             "wm density", "wm density reset", "wm density 323",
             "wm scaling off", "wm scaling auto",
+            "xpand-projection info", "xpand-projection stretch 1080 2340 1300",
         ).forEach { assertTrue(it, CommandWhitelist.isAllowed(it)) }
     }
 
@@ -25,6 +26,9 @@ class CommandWhitelistTest {
             "wm scaling off; id",
             "wm overscan 0,0,0,0",
             "wm size \$(id)",
+            "xpand-projection stretch 1080 2340 1300; id",
+            "xpand-projection stretch 1080 2340",
+            "xpand-projection reset",
             "id", "", "sh -c id",
         ).forEach { assertFalse(it, CommandWhitelist.isAllowed(it)) }
     }

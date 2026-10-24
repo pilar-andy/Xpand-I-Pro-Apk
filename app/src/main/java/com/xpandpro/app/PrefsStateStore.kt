@@ -31,6 +31,10 @@ class PrefsStateStore(context: Context) : StateStore {
         get() = prefs.getBoolean("scaling_changed", false)
         set(v) { prefs.edit().putBoolean("scaling_changed", v).commit() }
 
+    override var projectionChanged: Boolean
+        get() = prefs.getBoolean("projection_changed", false)
+        set(v) { prefs.edit().putBoolean("projection_changed", v).commit() }
+
     /** Ajustes extra con los que la prueba de compatibilidad vio que SÍ estira. */
     var stretchTweaks: Set<Tweak>
         get() = (prefs.getString("stretch_tweaks", "") ?: "").split(",")
@@ -42,6 +46,12 @@ class PrefsStateStore(context: Context) : StateStore {
         get() = runCatching { StretchSupport.valueOf(prefs.getString("stretch_support", null) ?: "") }
             .getOrDefault(StretchSupport.UNKNOWN)
         set(v) { prefs.edit().putString("stretch_support", v.name).apply() }
+
+    /** Resultado de la prueba experimental de proyección directa. */
+    var projectionSupport: StretchSupport
+        get() = runCatching { StretchSupport.valueOf(prefs.getString("projection_support", null) ?: "") }
+            .getOrDefault(StretchSupport.UNKNOWN)
+        set(v) { prefs.edit().putString("projection_support", v.name).apply() }
 
     /** Multiplicador elegido, en centésimas (120 = 1.20x). */
     var multiplierPercent: Int

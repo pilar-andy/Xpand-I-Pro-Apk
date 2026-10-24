@@ -15,6 +15,7 @@ import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import com.xpandpro.app.AppServices
 import com.xpandpro.app.Config
 import com.xpandpro.app.PrefsStateStore
 import com.xpandpro.app.R
@@ -35,6 +36,7 @@ class MainActivity : Activity() {
 
     private companion object {
         const val REQ_TEST = 1
+        const val REQ_PROJECTION = 2
 
         /** Variantes que prueba la compatibilidad, de la más simple a la más completa. */
         val VARIANTS: List<Set<Tweak>> = listOf(
@@ -60,6 +62,7 @@ class MainActivity : Activity() {
     private lateinit var diagText: TextView
     private lateinit var gameButton: Button
     private lateinit var testButton: Button
+    private lateinit var projectionButton: Button
     private lateinit var supportText: TextView
 
     private val io = Executors.newSingleThreadExecutor()
@@ -86,6 +89,7 @@ class MainActivity : Activity() {
         diagText = findViewById(R.id.diag_text)
         gameButton = findViewById(R.id.game_button)
         testButton = findViewById(R.id.test_button)
+        projectionButton = findViewById(R.id.projection_button)
         supportText = findViewById(R.id.support_text)
 
         // Barra: 0..29 -> 1.01x..1.30x
@@ -104,7 +108,9 @@ class MainActivity : Activity() {
         mainButton.setOnClickListener { onMainButton() }
         gameButton.setOnClickListener { openGame() }
         testButton.setOnClickListener { runTest() }
+        projectionButton.setOnClickListener { runProjectionTest() }
 
+        AppServices.shizuku = shizuku
         shizuku.register()
     }
 
@@ -122,6 +128,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         cancelConfirm()
+        if (AppServices.shizuku === shizuku) AppServices.shizuku = null
         shizuku.unregister()
         io.shutdown()
         super.onDestroy()
@@ -142,7 +149,8 @@ class MainActivity : Activity() {
     }
 
     private fun isStretched() =
-        deviceState?.isOverridden == true || store.scalingChanged || store.densityChanged
+        deviceState?.isOverridden == true || store.scalingChanged || store.densityChanged ||
+            store.projectionChanged
 
     private fun render() {
         val status = shizuku.status()
@@ -187,6 +195,7 @@ class MainActivity : Activity() {
 
         seek.isEnabled = !busy && !stretched
         testButton.isEnabled = !busy && status == Status.READY && !stretched
+        projectionButton.isEnabled = !busy && status == Status.READY && !stretched
         supportText.setText(
             when (store.stretchSupport) {
                 StretchSupport.UNKNOWN -> R.string.support_unknown
@@ -291,6 +300,16 @@ class MainActivity : Activity() {
         }
     }
 
+    /** EXPERIMENTAL: prueba de proyección directa (no toca `wm size`). */
+    private fun runProjectionTest() {
+        if (busy || shizuku.status() != Status.READY || isStretched()) return
+        startActivityForResult(
+            Intent(this, StretchTestActivity::class.java)
+                .putExtra(StretchTestActivity.EXTRA_PROJECTION, true),
+            REQ_PROJECTION
+        )
+    }
+
     private fun finishTestAsNo() {
         store.stretchSupport = StretchSupport.NO
         store.stretchTweaks = emptySet()
@@ -301,6 +320,21 @@ class MainActivity : Activity() {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQ_PROJECTION) {
+            when (resultCode) {
+                StretchTestActivity.RESULT_OVAL_FILL -> {
+                    store.projectionSupport = StretchSupport.YES
+                    toast(getString(R.string.projection_saved_yes))
+                }
+                StretchTestActivity.RESULT_ROUND_BARS -> {
+                    store.projectionSupport = StretchSupport.NO
+                    toast(getString(R.string.projection_saved_no))
+                }
+                else -> toast(getString(R.string.test_stopped))
+            }
+            refresh()
+            return
+        }
         if (requestCode != REQ_TEST) return
         when (resultCode) {
             StretchTestActivity.RESULT_OVAL_FILL -> {

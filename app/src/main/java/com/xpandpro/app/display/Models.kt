@@ -55,6 +55,9 @@ interface StateStore {
 
     /** True si `wm scaling off` fue aplicado por la app y falta volver a `auto`. */
     var scalingChanged: Boolean
+
+    /** True si se aplicó la proyección directa (experimental) y falta deshacerla. */
+    var projectionChanged: Boolean
 }
 
 sealed class Outcome {

@@ -11,8 +11,12 @@ class FakeDevice(
     var rejectDensity: Boolean = false,
     var scalingOff: Boolean = false,
     var rejectScaling: Boolean = false,
+    var rejectProjection: Boolean = false,
 ) : ShellRunner {
     val commands = mutableListOf<String>()
+
+    /** Simula que la imagen está ensanchada por la proyección directa. */
+    var projectionActive: Boolean = false
 
     override fun run(command: String): ShellResult {
         commands += command
@@ -22,10 +26,16 @@ class FakeDevice(
                 val o = override?.let { "\nOverride size: $it" } ?: ""
                 ShellResult(0, "Physical size: $physical$o\n")
             }
-            command == "wm size reset" -> { override = null; ShellResult(0, "") }
+            // Cambiar el tamaño hace que el sistema vuelva a aplicar su propia proyección.
+            command == "wm size reset" -> { override = null; projectionActive = false; ShellResult(0, "") }
             command.startsWith("wm size ") -> {
                 if (!rejectSet) override = Resolution.parse(command.removePrefix("wm size "))
+                projectionActive = false
                 ShellResult(0, "")
+            }
+            command.startsWith("xpand-projection stretch ") -> {
+                if (rejectProjection) ShellResult(1, "ERR NoSuchMethodException")
+                else { projectionActive = true; ShellResult(0, "ok") }
             }
             command == "wm density" -> {
                 val o = densityOverride?.let { "\nOverride density: $it" } ?: ""
@@ -51,4 +61,5 @@ class FakeStore : StateStore {
     override var originalDensity: String? = null
     override var densityChanged = false
     override var scalingChanged = false
+    override var projectionChanged = false
 }
